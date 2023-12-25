@@ -6,16 +6,25 @@ from schemas.user import userEntity, usersEntity
 
 user = APIRouter()
 
-notFound = "{}"
+pymongo_exception = {
+    "message" : "Pymongo Error"
+}
 
 @user.get('/')
 async def find_all_users():
-    return usersEntity(collection.find())
+    try:
+        result = collection.find()
+    except:
+        result = pymongo_exception
+    return usersEntity(result)
 
 @user.post('/')
 async def create_user(user: User):
-    collection.insert_one(dict(user))
-    return usersEntity(collection.find())
+    try:
+        result = collection.insert_one(dict(user))
+        return userEntity(collection.find({"_id":ObjectId(result.inserted_id)}))
+    except:
+        return userEntity(pymongo_exception)
 
 @user.get('/{id}')
 async def find_one_user(id):
@@ -23,13 +32,20 @@ async def find_one_user(id):
     if result:
         return userEntity(result)
     else:
-        return notFound
+        return userEntity(pymongo_exception)
 
 @user.put('/{id}')
 async def update_user(id, user: User):
-    collection.find_one_and_update({"_id":ObjectId(id)}, {"$set":dict(user)})
-    return userEntity(collection.find_one({"_id":ObjectId(id)}))
+    try:
+        result = collection.find_one_and_update({"_id":ObjectId(id)}, {"$set":dict(user)})
+        return userEntity(collection.find_one({"_id":ObjectId(id)}))
+    except:
+        return userEntity(pymongo_exception)
+    
 
 @user.delete('/{id}')
 async def delete_user(id):
-    return userEntity(collection.find_one_and_delete({"_id":ObjectId(id)}))
+    try:
+        userEntity(collection.find_one_and_delete({"_id":ObjectId(id)}))
+    except:
+        return userEntity(pymongo_exception)

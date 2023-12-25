@@ -6,6 +6,8 @@ from schemas.user import userEntity, usersEntity
 
 user = APIRouter()
 
+notFound = "{}"
+
 @user.get('/')
 async def find_all_users():
     return usersEntity(collection.find())
@@ -17,7 +19,11 @@ async def create_user(user: User):
 
 @user.get('/{id}')
 async def find_one_user(id):
-    return userEntity(collection.find_one({"_id":ObjectId(id)}))
+    result = collection.find_one({"_id":ObjectId(id)})
+    if result:
+        return userEntity(result)
+    else:
+        return notFound
 
 @user.put('/{id}')
 async def update_user(id, user: User):
